@@ -1,4 +1,5 @@
 import random
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -76,18 +77,31 @@ def draw_clock(hour: int, minute: int):
 # ---------------------------
 # 새로운 문제 생성
 # ---------------------------
-def generate_problem(mode: str = "easy"):
-    # 쉬움: 5분 단위 / 보통: 1분 단위
+def generate_problem(mode: str = "five"):
+    # mode:
+    # - "hour": 정시만 (예: 3:00)
+    # - "half": 30분 단위 (예: 3:00, 3:30)
+    # - "five": 5분 단위
+    # - "one": 1분 단위
     hour = random.randint(1, 12)
-    if mode == "easy":
-        minute = random.choice(list(range(0, 60, 5)))
-    else:
+
+    if mode == "hour":
+        minute = 0
+    elif mode == "half":
+        minute = random.choice([0, 30])
+    elif mode == "one":
         minute = random.randint(0, 59)
+    else:  # 기본: 5분 단위
+        minute = random.choice(list(range(0, 60, 5)))
+
     return hour, minute
 
 
-def do_rerun():
-    """streamlit 버전에 따라 적절한 rerun 함수 호출"""
+def do_rerun(delay_sec: float = 0.0):
+    # delay_sec 동안 잠깐 보여준 뒤 전체 앱을 다시 실행
+    if delay_sec > 0:
+        time.sleep(delay_sec)
+
     if hasattr(st, "rerun"):
         st.rerun()
     elif hasattr(st, "experimental_rerun"):
@@ -98,7 +112,8 @@ def do_rerun():
 # 초기 세션 상태 설정
 # ---------------------------
 if "mode" not in st.session_state:
-    st.session_state.mode = "easy"
+    # 초1 기준으로 제일 쉬운 단계(정시 읽기)부터 시작
+    st.session_state.mode = "hour"
 
 if "problem_hour" not in st.session_state or "problem_minute" not in st.session_state:
     h, m = generate_problem(st.session_state.mode)
@@ -114,27 +129,36 @@ if "correct" not in st.session_state:
 # ---------------------------
 # UI 구성
 # ---------------------------
-st.title("⏰ 초등 저학년용 시계 읽기 연습")
+st.title("⏰ 초등 1학년용 시계 읽기 연습")
 
 st.markdown(
-    """
+    '''
 이 앱은 **아날로그 시계 읽기 연습**을 위한 도구입니다.  
-시계를 보고 **시**와 **분**을 맞게 적어 보세요!
-"""
+난이도를 조절하면서 **시**와 **분**을 읽는 연습을 해 보세요!
+'''
 )
 
-# 난이도 선택
-mode = st.radio(
+# 🔹 난이도 4단계 (2단계 추가됨: 정시, 30분)
+mode_label = st.radio(
     "난이도 선택",
     (
-        "쉬움 (5분 단위)",
-        "보통 (1분 단위)",
+        "1단계: 정시 읽기 (예: 3시)",
+        "2단계: 30분 단위 (예: 3시 30분)",
+        "3단계: 5분 단위",
+        "4단계: 1분 단위",
     ),
     horizontal=True,
 )
 
-# 내부에서 사용할 모드 문자열
-internal_mode = "easy" if "쉬움" in mode else "normal"
+if "정시" in mode_label:
+    internal_mode = "hour"
+elif "30분" in mode_label:
+    internal_mode = "half"
+elif "5분" in mode_label:
+    internal_mode = "five"
+else:
+    internal_mode = "one"
+
 st.session_state.mode = internal_mode
 
 col1, col2 = st.columns(2)
@@ -147,7 +171,6 @@ with col1:
 with col2:
     st.subheader("현재 시각은 몇 시 몇 분일까요?")
 
-    # 매번 rerun될 때 기본값 1시 0분으로 초기화
     user_hour = st.number_input("시 (1~12)", min_value=1, max_value=12, step=1, value=1)
     user_minute = st.number_input(
         "분 (0~59)", min_value=0, max_value=59, step=1, value=0
@@ -163,29 +186,27 @@ with col2:
         correct_minute = st.session_state.problem_minute
 
         if (user_hour == correct_hour) and (user_minute == correct_minute):
-            st.success("🎉 정답입니다! 잘했어요! 다음 문제가 나왔어요.")
+            st.success("🎉 정답입니다! 잘했어요! 다음 문제가 나와요.")
             st.session_state.correct += 1
             st.balloons()
 
-            # ✅ 정답일 때 자동으로 다음 문제 생성
+            # ✅ 정답일 때 자동 다음 문제 생성
             h, m = generate_problem(st.session_state.mode)
             st.session_state.problem_hour = h
             st.session_state.problem_minute = m
 
-            # 새 문제를 바로 보여주기 위해 전체 앱 재실행
-            do_rerun()
+            # ✅ 1.5초 동안 정답 메시지/빵빠레 보여준 뒤 리렌더
+            do_rerun(delay_sec=1.5)
         else:
             st.error(
                 f"아쉽네요 😢 정답은 **{correct_hour}시 {correct_minute}분** 이었어요."
             )
 
     if new_btn:
-        # 사용자가 원할 때 수동으로 새 문제 생성
         h, m = generate_problem(st.session_state.mode)
         st.session_state.problem_hour = h
         st.session_state.problem_minute = m
         do_rerun()
-
 
 # ---------------------------
 # 점수/통계
