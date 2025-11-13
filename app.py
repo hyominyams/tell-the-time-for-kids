@@ -86,6 +86,14 @@ def generate_problem(mode: str = "easy"):
     return hour, minute
 
 
+def do_rerun():
+    """streamlit 버전에 따라 적절한 rerun 함수 호출"""
+    if hasattr(st, "rerun"):
+        st.rerun()
+    elif hasattr(st, "experimental_rerun"):
+        st.experimental_rerun()
+
+
 # ---------------------------
 # 초기 세션 상태 설정
 # ---------------------------
@@ -139,6 +147,7 @@ with col1:
 with col2:
     st.subheader("현재 시각은 몇 시 몇 분일까요?")
 
+    # 매번 rerun될 때 기본값 1시 0분으로 초기화
     user_hour = st.number_input("시 (1~12)", min_value=1, max_value=12, step=1, value=1)
     user_minute = st.number_input(
         "분 (0~59)", min_value=0, max_value=59, step=1, value=0
@@ -162,17 +171,20 @@ with col2:
             h, m = generate_problem(st.session_state.mode)
             st.session_state.problem_hour = h
             st.session_state.problem_minute = m
+
+            # 새 문제를 바로 보여주기 위해 전체 앱 재실행
+            do_rerun()
         else:
             st.error(
                 f"아쉽네요 😢 정답은 **{correct_hour}시 {correct_minute}분** 이었어요."
             )
 
-    # ❗틀렸을 때는 같은 문제를 유지하고,
-    # 원하면 '새 문제 만들기'로 넘어갈 수 있게 유지
     if new_btn:
+        # 사용자가 원할 때 수동으로 새 문제 생성
         h, m = generate_problem(st.session_state.mode)
         st.session_state.problem_hour = h
         st.session_state.problem_minute = m
+        do_rerun()
 
 
 # ---------------------------
