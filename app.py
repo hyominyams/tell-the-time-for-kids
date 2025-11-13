@@ -10,6 +10,8 @@ import streamlit as st
 def draw_clock(hour: int, minute: int):
     fig, ax = plt.subplots(figsize=(4, 4))
     ax.set_aspect("equal")
+    ax.set_xlim(-1.1, 1.1)
+    ax.set_ylim(-1.1, 1.1)
     ax.axis("off")
 
     # 시계 외곽 원
@@ -17,8 +19,9 @@ def draw_clock(hour: int, minute: int):
     ax.add_patch(circle)
 
     # 숫자(1~12) 표시
+    # 12가 위, 3이 오른쪽, 6이 아래, 9가 왼쪽에 오도록 각도 계산
     for h in range(1, 13):
-        angle = np.pi / 6 * (h - 3)  # 12시가 위로 오도록 -3 보정
+        angle = np.pi / 2 - np.deg2rad((h % 12) * 30)  # 시계 방향 보정
         x = 0.8 * np.cos(angle)
         y = 0.8 * np.sin(angle)
         ax.text(x, y, str(h), ha="center", va="center", fontsize=14)
@@ -29,9 +32,9 @@ def draw_clock(hour: int, minute: int):
     # 시침: 1시간당 30도 + 1분당 0.5도
     hour_angle_deg = (hour % 12) * 30 + minute * 0.5
 
-    # 라디안으로 변환 (위쪽이 12시가 되도록 -90도 보정: -pi/2)
-    minute_angle = np.deg2rad(minute_angle_deg) - np.pi / 2
-    hour_angle = np.deg2rad(hour_angle_deg) - np.pi / 2
+    # 수학 좌표계 기준 각도 (12시가 위, 시계 방향으로 진행)
+    minute_angle = np.pi / 2 - np.deg2rad(minute_angle_deg)
+    hour_angle = np.pi / 2 - np.deg2rad(hour_angle_deg)
 
     # 시침 끝점 (길이 0.5)
     hx = 0.5 * np.cos(hour_angle)
@@ -144,7 +147,8 @@ with col2:
         h, m = generate_problem(st.session_state.mode)
         st.session_state.problem_hour = h
         st.session_state.problem_minute = m
-        st.experimental_rerun()
+        # 버튼이 눌리면 새 문제가 바로 보이도록 (Streamlit이 자동으로 전체 재실행해 줌)
+
 
 # ---------------------------
 # 점수/통계
