@@ -5,7 +5,7 @@ import streamlit as st
 
 
 # ---------------------------
-# 시계 그리기 함수
+# 시계 그리기 함수 (1분 눈금 포함)
 # ---------------------------
 def draw_clock(hour: int, minute: int):
     fig, ax = plt.subplots(figsize=(4, 4))
@@ -19,19 +19,18 @@ def draw_clock(hour: int, minute: int):
     ax.add_patch(circle)
 
     # --- 분 눈금(틱) 60개 그리기 ---
-    # i = 0~59, 1분마다 하나씩
     for i in range(60):
         angle = np.pi / 2 - np.deg2rad(i * 6)  # 12시가 위, 시계 방향
 
-        # 5분 단위는 조금 더 길고 두껍게, 나머지는 짧게
+        # 5분 단위는 더 길고 두껍게
         if i % 5 == 0:
-            r_inner = 0.88   # 긴 눈금 시작 반지름
-            lw = 2           # 선 두께
+            r_inner = 0.88
+            lw = 2
         else:
-            r_inner = 0.94   # 짧은 눈금 시작 반지름
+            r_inner = 0.94
             lw = 1
 
-        r_outer = 1.0        # 눈금 끝은 테두리 바로 안쪽
+        r_outer = 1.0
         x1 = r_inner * np.cos(angle)
         y1 = r_inner * np.sin(angle)
         x2 = r_outer * np.cos(angle)
@@ -39,9 +38,9 @@ def draw_clock(hour: int, minute: int):
 
         ax.plot([x1, x2], [y1, y2], linewidth=lw)
 
-    # 숫자(1~12) 표시 - 눈금보다 조금 안쪽에
+    # 숫자(1~12) 표시
     for h in range(1, 13):
-        angle = np.pi / 2 - np.deg2rad((h % 12) * 30)  # 시계 방향 보정
+        angle = np.pi / 2 - np.deg2rad((h % 12) * 30)
         x = 0.75 * np.cos(angle)
         y = 0.75 * np.sin(angle)
         ax.text(x, y, str(h), ha="center", va="center", fontsize=14)
@@ -52,7 +51,7 @@ def draw_clock(hour: int, minute: int):
     # 시침: 1시간당 30도 + 1분당 0.5도
     hour_angle_deg = (hour % 12) * 30 + minute * 0.5
 
-    # 수학 좌표계 기준 각도 (12시가 위, 시계 방향으로 진행)
+    # 수학 좌표계 기준 각도 (12시가 위, 시계 방향)
     minute_angle = np.pi / 2 - np.deg2rad(minute_angle_deg)
     hour_angle = np.pi / 2 - np.deg2rad(hour_angle_deg)
 
@@ -64,7 +63,7 @@ def draw_clock(hour: int, minute: int):
     mx = 0.75 * np.cos(minute_angle)
     my = 0.75 * np.sin(minute_angle)
 
-    # 시침 (조금 더 두껍게)
+    # 시침
     ax.plot([0, hx], [0, hy], linewidth=5)
     # 분침
     ax.plot([0, mx], [0, my], linewidth=3)
@@ -72,6 +71,7 @@ def draw_clock(hour: int, minute: int):
     ax.plot(0, 0, "o", markersize=8)
 
     return fig
+
 
 # ---------------------------
 # 새로운 문제 생성
@@ -154,19 +154,25 @@ with col2:
         correct_minute = st.session_state.problem_minute
 
         if (user_hour == correct_hour) and (user_minute == correct_minute):
-            st.success("🎉 정답입니다! 잘했어요!")
+            st.success("🎉 정답입니다! 잘했어요! 다음 문제가 나왔어요.")
             st.session_state.correct += 1
             st.balloons()
+
+            # ✅ 정답일 때 자동으로 다음 문제 생성
+            h, m = generate_problem(st.session_state.mode)
+            st.session_state.problem_hour = h
+            st.session_state.problem_minute = m
         else:
             st.error(
-                f"아쉽어요 😢 정답은 **{correct_hour}시 {correct_minute}분** 이었어요."
+                f"아쉽네요 😢 정답은 **{correct_hour}시 {correct_minute}분** 이었어요."
             )
 
+    # ❗틀렸을 때는 같은 문제를 유지하고,
+    # 원하면 '새 문제 만들기'로 넘어갈 수 있게 유지
     if new_btn:
         h, m = generate_problem(st.session_state.mode)
         st.session_state.problem_hour = h
         st.session_state.problem_minute = m
-        # 버튼이 눌리면 새 문제가 바로 보이도록 (Streamlit이 자동으로 전체 재실행해 줌)
 
 
 # ---------------------------
