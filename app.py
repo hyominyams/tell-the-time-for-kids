@@ -18,12 +18,32 @@ def draw_clock(hour: int, minute: int):
     circle = plt.Circle((0, 0), 1, fill=False, linewidth=3)
     ax.add_patch(circle)
 
-    # 숫자(1~12) 표시
-    # 12가 위, 3이 오른쪽, 6이 아래, 9가 왼쪽에 오도록 각도 계산
+    # --- 분 눈금(틱) 60개 그리기 ---
+    # i = 0~59, 1분마다 하나씩
+    for i in range(60):
+        angle = np.pi / 2 - np.deg2rad(i * 6)  # 12시가 위, 시계 방향
+
+        # 5분 단위는 조금 더 길고 두껍게, 나머지는 짧게
+        if i % 5 == 0:
+            r_inner = 0.88   # 긴 눈금 시작 반지름
+            lw = 2           # 선 두께
+        else:
+            r_inner = 0.94   # 짧은 눈금 시작 반지름
+            lw = 1
+
+        r_outer = 1.0        # 눈금 끝은 테두리 바로 안쪽
+        x1 = r_inner * np.cos(angle)
+        y1 = r_inner * np.sin(angle)
+        x2 = r_outer * np.cos(angle)
+        y2 = r_outer * np.sin(angle)
+
+        ax.plot([x1, x2], [y1, y2], linewidth=lw)
+
+    # 숫자(1~12) 표시 - 눈금보다 조금 안쪽에
     for h in range(1, 13):
         angle = np.pi / 2 - np.deg2rad((h % 12) * 30)  # 시계 방향 보정
-        x = 0.8 * np.cos(angle)
-        y = 0.8 * np.sin(angle)
+        x = 0.75 * np.cos(angle)
+        y = 0.75 * np.sin(angle)
         ax.text(x, y, str(h), ha="center", va="center", fontsize=14)
 
     # --- 각도 계산 (분에 따라 시침이 조금씩 움직이게) ---
@@ -44,15 +64,14 @@ def draw_clock(hour: int, minute: int):
     mx = 0.75 * np.cos(minute_angle)
     my = 0.75 * np.sin(minute_angle)
 
-    # 시침
-    ax.plot([0, hx], [0, hy], linewidth=6)
+    # 시침 (조금 더 두껍게)
+    ax.plot([0, hx], [0, hy], linewidth=5)
     # 분침
     ax.plot([0, mx], [0, my], linewidth=3)
     # 중심점
     ax.plot(0, 0, "o", markersize=8)
 
     return fig
-
 
 # ---------------------------
 # 새로운 문제 생성
